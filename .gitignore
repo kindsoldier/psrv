@@ -1,3 +1,7 @@
+config.h
+defines.h 
+autom4te.cache/
+Makefile
 log/
 run/
 c2srv
@@ -7,4 +11,3 @@ c2srv
 *.bak
 *.log
 *.status
-

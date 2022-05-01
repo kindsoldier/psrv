@@ -3,9 +3,10 @@ AUTOMAKE_OPTIONS = foreign no-dependencies no-installinfo
 
 SUFFIXES = .c .o
 AM_CFLAGS = -Wall
+AM_LDFLAGS = -pthread
 
 .c.o:
-	$(CC) -I./ $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
+	$(CC) -I./ -pthread $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 #config.h: config.h.in
 #	./config.status $@
@@ -13,7 +14,7 @@ AM_CFLAGS = -Wall
 sbin_PROGRAMS = c2srv
 c2srv_SOURCES = main.c service.c common.c wstring.c
 
-c2srv_EXTRA_SOURCES = \
+c2srv_SOURCES += \
 	service.h \
 	wstring.h \
 	common.h

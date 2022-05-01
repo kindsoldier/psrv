@@ -8,6 +8,23 @@ PACKAGE=c2srv
 AC_PROG_CC([clang gcc cc])
 AC_PROG_CC_STDC
 AC_C_CONST
+AM_CONFIG_HEADER([defines.h])
+
+AC_CHECK_HEADERS([arpa/inet.h fcntl.h limits.h locale.h netinet/in.h stdlib.h string.h sys/socket.h unistd.h wchar.h wctype.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_CHECK_HEADER_STDBOOL
+AC_TYPE_MODE_T
+AC_TYPE_PID_T
+AC_TYPE_SSIZE_T
+AC_STRUCT_TIMEZONE
+
+# Checks for library functions.
+AC_FUNC_FORK
+AC_FUNC_MALLOC
+AC_CHECK_FUNCS([clock_gettime dup2 memset mkdir setlocale socket])
+
+
 
 dnl AC_ARG_ENABLE(debug,
 dnl AS_HELP_STRING([--enable-debug],
@@ -33,7 +50,7 @@ AC_CHECK_PROG(HAVE_CP, cp, true, false, /bin /usr/local/bin /usr/bin)
 if test "x$HAVE_CP" = "xfalse"; then
     AC_MSG_ERROR([Requested program cp not found])
 fi
-AC_PATH_PROG([CP],[cp])
+AC_PATH_PROG([CP],[cp cp])
 
 AC_PROG_INSTALL
 

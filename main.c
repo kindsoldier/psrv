@@ -50,22 +50,29 @@ int main(int argc, char **argv) {
 
     error = srv_openlog(psrv);
     if (error != false) {
-        return exit_on_error;
+        return error_exit;
     }
 
     srv_fork(psrv);
 
-    error = srv_write_pid(psrv);
+    error = srv_writepid(psrv);
     if (error != false) {
-        return exit_on_error;
+        return error_exit;
     }
 
-    error = srv_writelog(psrv, "qwerty");
-    error = srv_writelog(psrv, "qwerty");
+    error = srv_writepid(psrv);
+    if (error != false) {
+        return error_exit;
+    }
+
+    error = srv_run(psrv);
+    if (error != false) {
+        return error_exit;
+    }
 
     error = srv_closelog(psrv);
     if (error != false) {
-        return exit_on_error;
+        return error_exit;
     }
-    return exit_on_life;
+    return success_exit;
 }

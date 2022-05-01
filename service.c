@@ -12,6 +12,12 @@
 
 #include <ctype.h>
 
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include <pthread.h>
+
 #include "common.h"
 #include "config.h"
 #include "wstring.h"
@@ -28,6 +34,9 @@ const mode_t logdir_mode = 0777;
 const mode_t logfile_mode = 0640;
 const char *logfile = "log";
 
+const char* conffile = "c2srv.conf";
+#define MAX_LINE_SIZE 1024
+
 error_t srv_init(srv_t *srv) {
     error_t error = false;
     srv->rundir = srv_rundir;
@@ -43,7 +52,7 @@ error_t srv_print(srv_t *srv) {
     return error;
 }
 
-error_t srv_write_pid(srv_t *srv) {
+error_t srv_writepid(srv_t *srv) {
     error_t error = false;
     int res;
 
@@ -153,7 +162,7 @@ error_t srv_fork(srv_t *srv) {
 
     if (res != 0) {
         srv_writelog(srv, "fork srv");
-        exit(exit_on_life);
+        exit(success_exit);
     }
 
     res = setsid();
@@ -168,10 +177,6 @@ error_t srv_fork(srv_t *srv) {
 
     return error;
 }
-
-
-const char* conffile = "c2srv.conf";
-#define MAX_LINE_SIZE 1024
 
 error_t srv_readconf(srv_t *srv) {
     error_t error = false;
@@ -224,5 +229,120 @@ error_t srv_readconf(srv_t *srv) {
             pos = 0;
         };
     }
+    return error;
+}
+
+typedef struct {
+    int size;
+    pthread_t* ref;
+} parray_t;
+
+parray_t parray_init(int size) {
+    parray_t array;
+    array.ref = malloc(sizeof(pthread_t*) * size);
+    if (array.ref == NULL) return array;
+    for (int i = 0; i < size; i++) {
+        array.ref[i] = NULL;
+    }
+    array.size = size;
+    return array;
+}
+
+void parray_add(parray_t* array, pthread_t* item) {
+    for (int i = 0; i < array->size; i++) {
+        if (array->ref[i] == NULL) {
+            array->ref[i] = *item;
+            return;
+        }
+    }
+}
+
+void parray_free(parray_t* array) {
+    free(array->ref);
+}
+
+
+const int port = 5000;
+const int backlog = 10;
+
+typedef struct {
+    int sock;
+} hello_args_t;
+
+
+void* hello(void* args) {
+
+    hello_args_t* hargs = (hello_args_t*)args;
+    srv_writelog(psrv, "thr start");
+
+    struct timeval tv;
+    tv.tv_sec = 3;
+    tv.tv_usec = 0;
+    int res = setsockopt(hargs->sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(struct timeval));
+    if (res < 0) {
+        return NULL;
+    }
+
+    char message[MAX_LINE_SIZE];
+    memset(message, '\0', MAX_LINE_SIZE);
+    sprintf(message, "write to %d", hargs->sock);
+    srv_writelog(psrv, message);
+
+    char *hello_msg = "hello\n";
+    write(hargs->sock, hello_msg, strlen(hello_msg));
+
+    close(hargs->sock);
+
+
+    return NULL;
+}
+
+
+error_t srv_run(srv_t *srv) {
+    error_t error = false;
+
+    int sock = socket(PF_INET, SOCK_STREAM, 0);
+    if(sock < 0) {
+        return error;
+    }
+
+    int optval = 1;
+    int res = 0;
+    res = setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+    if (res < 0) {
+        return error;
+    }
+
+    struct sockaddr addr;
+    struct sockaddr_in* paddr = (struct sockaddr_in*)&addr;
+    paddr->sin_family = AF_INET;
+    paddr->sin_addr.s_addr = INADDR_ANY;
+    paddr->sin_port = htons(port);
+    paddr->sin_len = sizeof(struct sockaddr_in);
+
+    res = bind(sock, (struct sockaddr*)paddr, paddr->sin_len);
+    if (res < 0) {
+        return error;
+    }
+    res = listen(sock, backlog);
+    if (res < 0) {
+        return error;
+    }
+
+    while (true) {
+        int newsock = 0;
+        if ((newsock = accept(sock, NULL, 0)) > 3) {
+            pthread_t thread;
+            pthread_attr_t attr;
+            pthread_attr_init(&attr);
+            hello_args_t args;
+            args.sock = newsock;
+            res = pthread_create(&thread, &attr, hello, &args);
+            void* thres = NULL;
+            res = pthread_join(thread, (void**)&thres);
+        }
+    }
+    close(sock);
+
     return error;
 }

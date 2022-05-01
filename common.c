@@ -1,4 +1,4 @@
 
 
-const int exit_on_error = 1;
-const int exit_on_life = 0;
+const int error_exit = 1;
+const int success_exit = 0;

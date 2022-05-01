@@ -3,7 +3,7 @@
 
 typedef bool error_t;
 
-extern const int exit_on_error;
-extern const int exit_on_life;
+extern const int error_exit;
+extern const int success_exit;
 
 #endif
