@@ -1,0 +1,10 @@
+log/
+run/
+c2srv
+*.o
+*.geany
+*~
+*.bak
+*.log
+*.status
+

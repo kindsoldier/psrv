@@ -1,0 +1,9 @@
+
+#ifndef CONFIG_H_QWER
+#define CONFIG_H_QWER
+
+static const char *srv_rundir = "@app_rundir@";
+static const char *srv_logdir = "@app_logdir@";
+static const char *srv_confdir = "@app_confdir@";
+
+#endif
